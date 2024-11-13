@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Phaser Game with User Controls</title>
+    <script src="/z3-built.js"></script>
+    <script>
+      globalThis.global = { initZ3: globalThis.initZ3 };
+    </script>
+    <style>
+      /* Control panel styles */
+      #controls {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: rgba(255, 255, 255, 0.8);
+        padding: 10px;
+        border-radius: 5px;
+        font-family: Arial, sans-serif;
+      }
+      #controls label {
+        display: inline-block;
+        width: 120px;
+        margin-top: 5px;
+      }
+      #controls input {
+        width: 50px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <div id="phaser-game"></div>
+    
+    <!-- Control Panel for Item Counts -->
+    <div id="controls">
+      <label for="numWheelbarrows">Wheelbarrows:</label>
+      <input type="number" id="numWheelbarrows" value="1" min="0"><br>
+      
+      <label for="numMushrooms">Mushrooms:</label>
+      <input type="number" id="numMushrooms" value="1" min="0"><br>
+      
+      <label for="numSigns">Signs:</label>
+      <input type="number" id="numSigns" value="1" min="0"><br>
+      
+      <label for="numBeehives">Beehives:</label>
+      <input type="number" id="numBeehives" value="1" min="0"><br>
+      
+      <button id="applySettings">Apply Settings</button>
+    </div>
+
+    <span id="description"></span>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

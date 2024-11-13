@@ -1,1 +1,5 @@
-z3demo which solves a kid's logic puzzle: https://woojr.com/wp-content/uploads/2018/08/kids-logic-puzzle-answers.jpg
+# z3-web-browser
+
+Press R to restart, adjust num items generated in top right corner.
+
+Scene restarting only occurs when not generating.

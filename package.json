@@ -1,6 +1,18 @@
 {
-    "dependencies": {
-        "z3-solver": "^4.13.3"
-    },
-    "type": "module"
+  "name": "z3-web-browser",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^5.4.10"
+  },
+  "dependencies": {
+    "phaser": "^3.86.0",
+    "z3-solver": "^4.13.3"
+  }
 }
