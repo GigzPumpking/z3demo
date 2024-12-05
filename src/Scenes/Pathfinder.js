@@ -30,7 +30,7 @@ export default class Pathfinder extends Phaser.Scene {
         console.log("Press 'Apply Settings' to change the number of items to place.");
         console.log("Both actions can only be done when the scene is not generating.");
 
-        this.objectList = [{name: "Wheelbarrow", index: 57}, {name: "Mushroom", index: 29}, {name: "Sign", index: 83}, {name: "Beehive", index: 94}];
+        this.objectList = [{name: "Wheelbarrow", index: 57}, {name: "Mushroom", index: 29}, {name: "Sign", index: 83}, {name: "Beehive", index: 94}, {name: "Key", index: 117}, {name: "Bow", index: 118}, {name: "Arrow", index: 119}, {name: "Rake", index: 116}];
 
         // Track user input and conversation history
         this.userInput = '';
