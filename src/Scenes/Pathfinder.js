@@ -30,6 +30,8 @@ export default class Pathfinder extends Phaser.Scene {
         console.log("Press 'Apply Settings' to change the number of items to place.");
         console.log("Both actions can only be done when the scene is not generating.");
 
+        this.objectList = [{name: "Wheelbarrow", index: 57}, {name: "Mushroom", index: 29}, {name: "Sign", index: 83}, {name: "Beehive", index: 94}];
+
         // Track user input and conversation history
         this.userInput = '';
         this.conversationHistory = []; // This will act as memory
@@ -94,14 +96,20 @@ export default class Pathfinder extends Phaser.Scene {
             }
         });
 
+        /*
         // Run each z3-solving scenario
         await this.petScenario();
         await this.fencedAreaScenario();
         await this.topOrLeftSideOfFenceScenario();
         await this.outsideFencedAreaScenario();
+        */
 
         // Run map placement z3 scenarios
-        await this.placeItemsInsideFencedAreas(this.numWheelbarrows);
+        // Get the wheelbarrow from the object list
+
+        const wheelbarrow = this.objectList.find(obj => obj.name === "Wheelbarrow").index;
+
+        await this.placeItemsInsideFencedAreas(this.numWheelbarrows, wheelbarrow);
         await this.placeMushroomAdjacentToTree(this.numMushrooms);
         await this.placeSignsAdjacentToPath(this.numSigns);
         await this.placeBeehiveAnywhere(this.numBeehives);
@@ -215,11 +223,20 @@ export default class Pathfinder extends Phaser.Scene {
         console.log("Item outside of fence and x >= 8 and y >= 20:", `${model.eval(x)}`, `${model.eval(y)}`);
     }
 
-    async placeItemsInsideFencedAreas(num = 1) {
-        const wheelbarrow = 57;
+    async placeItemsInsideFencedAreas(num = 1, item) {
+        /*
+        World Facts collection
+        */
+
         let fencedAreas = this.getFencedAreas();  // Get all fenced areas
-        let allValidCoords = [];  // List to store all valid positions for the wheelbarrow
     
+        /*
+        z3 constraints
+        */
+
+
+        let allValidCoords = [];  // List to store all valid positions for the item
+
         // Iterate over each fenced area to find valid positions within it
         for (let area of fencedAreas) {
             this.solver.reset();  // Reset solver for fresh constraints
@@ -245,9 +262,13 @@ export default class Pathfinder extends Phaser.Scene {
             }
         }
 
-        // Place wheelbarrows at random positions within all valid positions
-        if (!this.placeItemsAtRandomPositions(allValidCoords, num, wheelbarrow)) {
-            console.log("No valid positions found for wheelbarrow placement inside any fenced area.");
+        /*
+        item placement
+        */
+
+        // Place items at random positions within all valid positions
+        if (!this.placeItemsAtRandomPositions(allValidCoords, num, item)) {
+            console.log("No valid positions found for item placement inside any fenced area.");
             return false;
         }
         return true;
