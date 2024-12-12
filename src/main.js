@@ -18,20 +18,20 @@ let game = new Phaser.Game(config);
 
 // Apply settings button functionality
 document.getElementById('applySettings').addEventListener('click', () => {
-  const numWheelbarrows = parseInt(document.getElementById('numWheelbarrows').value);
-  const numMushrooms = parseInt(document.getElementById('numMushrooms').value);
-  const numSigns = parseInt(document.getElementById('numSigns').value);
-  const numBeehives = parseInt(document.getElementById('numBeehives').value);
+  const numFenceItems = parseInt(document.getElementById('numFenceItems').value);
+  const numTreeItems = parseInt(document.getElementById('numTreeItems').value);
+  const numPathItems = parseInt(document.getElementById('numPathItems').value);
+  const numAnywhereItems = parseInt(document.getElementById('numAnywhereItems').value);
 
   // Get reference to Pathfinder scene
   const pathfinderScene = game.scene.getScene('pathfinderScene');
 
   if (pathfinderScene) {
     // Set data directly on the scene's data object
-    pathfinderScene.data.set('numWheelbarrows', numWheelbarrows);
-    pathfinderScene.data.set('numMushrooms', numMushrooms);
-    pathfinderScene.data.set('numSigns', numSigns);
-    pathfinderScene.data.set('numBeehives', numBeehives);
+    pathfinderScene.data.set('numFenceItems', numFenceItems);
+    pathfinderScene.data.set('numTreeItems', numTreeItems);
+    pathfinderScene.data.set('numPathItems', numPathItems);
+    pathfinderScene.data.set('numAnywhereItems', numAnywhereItems);
     pathfinderScene.data.set('changedSettings', true);
   } else {
     console.error('Pathfinder scene is not initialized');

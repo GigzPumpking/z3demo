@@ -19,10 +19,10 @@ export default class Pathfinder extends Phaser.Scene {
         this.TILEWIDTH = 40;
         this.TILEHEIGHT = 25;
 
-        this.numWheelbarrows = this.sceneData?.numWheelbarrows || 1;
-        this.numMushrooms = this.sceneData?.numMushrooms || 1;
-        this.numSigns = this.sceneData?.numSigns || 3;
-        this.numBeehives = this.sceneData?.numBeehives || 1;
+        this.numFenceItems = this.sceneData?.numFenceItems || 1;
+        this.numTreeItems = this.sceneData?.numTreeItems || 1;
+        this.numPathItems = this.sceneData?.numPathItems || 3;
+        this.numAnywhereItems = this.sceneData?.numAnywhereItems || 1;
     }
 
     create() {
@@ -66,6 +66,8 @@ export default class Pathfinder extends Phaser.Scene {
         this.loadingText.alpha = 0;
 
         this.loadingText.setDepth(2);
+
+        /*
             
         // When R is pressed, reset the scene
         this.input.keyboard.on("keydown-R", () => {
@@ -75,6 +77,8 @@ export default class Pathfinder extends Phaser.Scene {
                 console.log("Cannot restart while generating...");
             }
         });
+
+        */
 
         // Display user typing and listen for keyboard input
         this.input.keyboard.on('keydown', (event) => {
@@ -96,6 +100,10 @@ export default class Pathfinder extends Phaser.Scene {
                 (async () => {
                     await this.generateObjects();
                 })();
+                return;
+            }
+            // if the command key is pressed, ignore
+            else if (event.key === 'Meta') {
                 return;
             }
 
@@ -135,10 +143,10 @@ export default class Pathfinder extends Phaser.Scene {
 
         const beehive = this.objectList.find(obj => obj.name === "Beehive").index;
 
-        await this.placeItemsInsideFencedAreas(this.numWheelbarrows, wheelbarrow);
-        await this.placeItemAdjacentToTree(this.numMushrooms, mushroom);
-        await this.placeItemAdjacentToPath(this.numSigns, sign);
-        await this.placeItemAnywhere(this.numBeehives, beehive, "up");
+        await this.placeItemsInsideFencedAreas(this.numFenceItems, wheelbarrow);
+        await this.placeItemAdjacentToTree(this.numTreeItems, mushroom);
+        await this.placeItemAdjacentToPath(this.numPathItems, sign);
+        await this.placeItemAnywhere(this.numAnywhereItems, beehive, "up");
         
         this.renderZ3Map();
     }
@@ -560,10 +568,10 @@ export default class Pathfinder extends Phaser.Scene {
     update() {;
         // Retrieve values from data or use defaults if not set
 
-        this.numWheelbarrows = this.data.get('numWheelbarrows') || 1;
-        this.numMushrooms = this.data.get('numMushrooms') || 1;
-        this.numSigns = this.data.get('numSigns') || 3;
-        this.numBeehives = this.data.get('numBeehives') || 1;
+        this.numFenceItems = this.data.get('numFenceItems') || 1;
+        this.numTreeItems = this.data.get('numTreeItems') || 1;
+        this.numPathItems = this.data.get('numPathItems') || 3;
+        this.numAnywhereItems = this.data.get('numAnywhereItems') || 1;
 
         // Reset changedSettings flag
         let changedSettings = this.data.get('changedSettings') || false;
@@ -588,13 +596,34 @@ export default class Pathfinder extends Phaser.Scene {
     }
 
     async handleChat(input) {
+        // Add user message to conversation history
+        this.conversationHistory.push({ role: 'user', content: input });
+    
         // Hidden API key
         const apiKey = ''; // Replace with your API key
         const url = 'https://api.openai.com/v1/chat/completions';
-
-        // Add user message to conversation history
-        this.conversationHistory.push({ role: 'user', content: input });
-
+    
+        // System prompt to guide ChatGPT
+        const systemPrompt = `
+    You are a helpful assistant integrated into a game. 
+    Users may issue commands like "place 3 Mushrooms adjacent to tree in the left direction" or "place 5 Signs anywhere".
+    Your task is to parse the command and return a JSON object containing:
+    1. "function" - the function to call (one of: "placeItemAdjacentToTree", "placeItemAdjacentToPath", "placeItemsInsideFencedAreas", "placeItemAnywhere").
+    2. "parameters" - an object with:
+       - "num" (number of items to place),
+       - "item" (the name of the object to place, matching one from the provided object list),
+       - "direction" (optional, one of: "left", "right", "up", "down").
+    
+    Be flexible and infer the user's intent based on their phrasing. For example:
+    - If the user describes "above" or "over", you may interpret it as "up".
+    - If the user mentions "digging tool" or something similar, you can connect it to "shovel" if it exists in the object list.
+    - If the user's phrasing matches or implies an item in the object list, use that item.
+    - If no direction is explicitly mentioned, set it to null.
+    
+    Return errors clearly if the input cannot be interpreted, and include reasoning in your response if needed.
+    The object list includes: ${JSON.stringify(this.objectList.map(obj => obj.name))}.
+    `;
+    
         try {
             const response = await fetch(url, {
                 method: 'POST',
@@ -604,22 +633,85 @@ export default class Pathfinder extends Phaser.Scene {
                 },
                 body: JSON.stringify({
                     model: 'gpt-3.5-turbo',
-                    messages: this.conversationHistory, // Send the conversation history
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        ...this.conversationHistory, // Include the conversation history
+                    ],
                 }),
             });
-
+    
             const data = await response.json();
-
-            // Add assistant response to conversation history
+    
+            // Parse ChatGPT's response
             const botResponse = data.choices[0].message.content;
-            console.log('ChatBot:', botResponse);
-            this.conversationHistory.push({ role: 'assistant', content: botResponse });
-
-            // Update the chat text
+            console.log('ChatGPT:', botResponse);
             this.chatText.text += `\nChatBot: ${botResponse}`;
+            this.conversationHistory.push({ role: 'assistant', content: botResponse });
+    
+            let botFeedback;
+    
+            // Attempt to parse JSON from ChatGPT's response
+            let parsedResponse;
+            try {
+                parsedResponse = JSON.parse(botResponse);
+            } catch (error) {
+                botFeedback = `\nChatBot: Sorry, I couldn't understand your request.`;
+                console.error('Error parsing ChatGPT response as JSON:', error);
+                this.chatText.text += botFeedback;
+                this.conversationHistory.push({ role: 'assistant', content: botFeedback });
+                return;
+            }
+    
+            // Extract function and parameters from parsed response
+            const { function: functionName, parameters } = parsedResponse;
+    
+            if (!functionName || !parameters) {
+                console.log('Invalid response format:', parsedResponse);
+                botFeedback = `\nChatBot: Sorry, I couldn't understand your request.`;
+                this.chatText.text += botFeedback;
+                this.conversationHistory.push({ role: 'assistant', content: botFeedback });
+                return;
+            }
+    
+            // Find the item index in the object list
+            const item = this.objectList.find(obj => obj.name.toLowerCase() === parameters.item.toLowerCase());
+            if (!item) {
+                console.log(`Item "${parameters.item}" not found in object list.`);
+                botFeedback = `\nChatBot: Item "${parameters.item}" not found in object list.`;
+                this.chatText.text += botFeedback;
+                this.conversationHistory.push({ role: 'assistant', content: botFeedback });
+                return;
+            }
+    
+            // Map function names to actual functions
+            const functionMap = {
+                placeItemAdjacentToTree: this.placeItemAdjacentToTree.bind(this),
+                placeItemAdjacentToPath: this.placeItemAdjacentToPath.bind(this),
+                placeItemsInsideFencedAreas: this.placeItemsInsideFencedAreas.bind(this),
+                placeItemAnywhere: this.placeItemAnywhere.bind(this),
+            };
+    
+            const targetFunction = functionMap[functionName];
+            if (!targetFunction) {
+                console.log(`Function "${functionName}" not found.`);
+                this.chatText.text += `\nChatBot: I couldn't understand what action to perform.`;
+                return;
+            }
+    
+            // Call the target function with the parsed parameters
+            const { num, direction } = parameters;
+            await targetFunction(num, item.index, direction);
+    
+            botFeedback = `\nChatBot: Successfully executed "${functionName}" for ${num} ${item.name}(s).`;
+            // Push the response to the conversation history
+            this.conversationHistory.push({ role: 'assistant', content: botFeedback });
+            this.chatText.text += botFeedback;
         } catch (error) {
-            console.error('Error:', error);
-            this.chatText.text += '\nChatBot: (Error fetching response)';
+            console.log("input", input);
+            console.error('Error communicating with ChatGPT:', error);
+            const botFeedback = `\nChatBot: There was an error processing your request.`;
+            this.chatText.text += botFeedback;
         }
-    }
+    }    
+    
 }
