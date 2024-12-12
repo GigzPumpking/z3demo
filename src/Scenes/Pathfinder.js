@@ -30,7 +30,27 @@ export default class Pathfinder extends Phaser.Scene {
         console.log("Press 'Apply Settings' to change the number of items to place.");
         console.log("Both actions can only be done when the scene is not generating.");
 
-        this.objectList = [{name: "Wheelbarrow", index: 57}, {name: "Mushroom", index: 29}, {name: "Sign", index: 83}, {name: "Beehive", index: 94}, {name: "Key", index: 117}, {name: "Bow", index: 118}, {name: "Arrow", index: 119}, {name: "Rake", index: 116}];
+        // Note: Every row is 12 tiles wide
+
+        this.objectList = [
+            {name: "Wheelbarrow", index: 57}, 
+            {name: "Mushroom", index: 29}, 
+            {name: "Sign", index: 83}, 
+            {name: "Beehive", index: 94}, 
+            {name: "Key", index: 117}, 
+            {name: "Bow", index: 118}, 
+            {name: "Arrow", index: 119}, 
+            {name: "Rake", index: 116},
+            {name: "Target", index: 95},
+            {name: "Coin", index: 93},
+            {name: "Bomb", index: 105},
+            {name: "Scythe", index: 129},
+            {name: "Shovel", index: 128},
+            {name: "Pickaxe", index: 115},
+            {name: "Axe", index: 127},
+            {name: "Empty Bucket", index: 130},
+            {name: "Full Bucket", index: 131},
+        ];
 
         // Track user input and conversation history
         this.userInput = '';
@@ -96,23 +116,21 @@ export default class Pathfinder extends Phaser.Scene {
             }
         });
 
-        /*
-        // Run each z3-solving scenario
-        await this.petScenario();
-        await this.fencedAreaScenario();
-        await this.topOrLeftSideOfFenceScenario();
-        await this.outsideFencedAreaScenario();
-        */
-
         // Run map placement z3 scenarios
         // Get the wheelbarrow from the object list
 
         const wheelbarrow = this.objectList.find(obj => obj.name === "Wheelbarrow").index;
 
+        const mushroom = this.objectList.find(obj => obj.name === "Mushroom").index;
+
+        const sign = this.objectList.find(obj => obj.name === "Sign").index;
+
+        const beehive = this.objectList.find(obj => obj.name === "Beehive").index;
+
         await this.placeItemsInsideFencedAreas(this.numWheelbarrows, wheelbarrow);
-        await this.placeMushroomAdjacentToTree(this.numMushrooms);
-        await this.placeSignsAdjacentToPath(this.numSigns);
-        await this.placeBeehiveAnywhere(this.numBeehives);
+        await this.placeItemAdjacentToTree(this.numMushrooms, mushroom);
+        await this.placeItemAdjacentToPath(this.numSigns, sign);
+        await this.placeItemAnywhere(this.numBeehives, beehive);
         
         this.renderZ3Map();
     }
@@ -128,99 +146,6 @@ export default class Pathfinder extends Phaser.Scene {
 
         this.tinyTownGrid = this.layersToGrid([this.groundLayer, this.treesLayer, this.housesLayer]);
         this.z3Layer = Array.from({ length: this.map.height }, () => Array(this.map.width).fill(-1));
-    }
-
-    async petScenario() {
-        this.solver.reset();
-        let [Bob, Mary, Cathy, Sue] = ["Bob", "Mary", "Cathy", "Sue"].map(name => Int.const(name));
-        
-        // Each kid has a different pet
-        this.solver.add(Distinct(Bob, Mary, Cathy, Sue));
-
-        // Each pet is assigned to a kid
-        this.solver.add(Or(Bob.eq(1), Mary.eq(1), Cathy.eq(1), Sue.eq(1)));
-        this.solver.add(Or(Bob.eq(2), Mary.eq(2), Cathy.eq(2), Sue.eq(2)));
-        this.solver.add(Or(Bob.eq(3), Mary.eq(3), Cathy.eq(3), Sue.eq(3)));
-        this.solver.add(Or(Bob.eq(4), Mary.eq(4), Cathy.eq(4), Sue.eq(4)));
-
-        // Bob has a dog
-        this.solver.add(Bob.eq(2));
-
-        // Sue has a bird
-        this.solver.add(Sue.eq(3));
-
-        // Mary does not have a fish
-        this.solver.add(Mary.neq(4));
-
-        console.log(await this.solver.check());
-        const model = this.solver.model();
-        console.log("Pet Scenario:", `${model.eval(Bob)}`, `${model.eval(Mary)}`, `${model.eval(Cathy)}`, `${model.eval(Sue)}`);
-    }
-
-    async fencedAreaScenario() {
-        this.solver.reset();
-        let [x, y] = [Int.const('x'), Int.const('y')];
-        
-        // Left fence is at tile x = 5
-
-        // Right fence is at tile x = 10
-
-        // Top fence is at tile y = 15
-
-        // Bottom fence is at tile y = 25
-
-        this.solver.add(x.gt(5), x.lt(10), y.gt(15), y.lt(25));
-        console.log(await this.solver.check());
-
-        const model = this.solver.model();
-        console.log("Item inside of fence:", `${model.eval(x)}`, `${model.eval(y)}`);
-    }
-
-    async topOrLeftSideOfFenceScenario() {
-        this.solver.reset();
-        let [x, y] = [Int.const('x'), Int.const('y')];
-
-        // if left side, 
-        // x should be 5 and y should be between 15 and 25 (not 25 because it could be considered bottom side), 
-        // if top side, 
-        // y should be 15 and x should be between 5 and 10 (not 10 because it could be considered right side)
-
-        // Define left-side constraints: 
-        const leftSideConstraint = And(x.eq(5), y.ge(15), y.lt(25));
-
-        // Define top-side constraints:
-        const topSideConstraint = And(y.eq(15), x.ge(5), x.lt(10));
-        
-        this.solver.add(Or(leftSideConstraint, topSideConstraint));
-        console.log(await this.solver.check());
-
-        const model = this.solver.model();
-        console.log("Item on top or left side of fence:", `${model.eval(x)}`, `${model.eval(y)}`);
-    }
-
-    async outsideFencedAreaScenario() {
-        this.solver.reset();
-        let [x, y] = [Int.const('x'), Int.const('y')];
-
-        // x should be greater than 8 and y should be greater than 20
-
-        // x can technically be less than 10 as long as y is greater than 25, 
-        // and y can be less than 25 as long as x is greater than 10
-
-        // Define the base constraints: x >= 8 and y >= 20
-        const baseConstraints = And(x.ge(8), y.ge(20));
-            
-        // Define the alternative constraints for outside positioning
-        const outsideLeftOrAboveConstraint = And(x.lt(10), y.gt(25));
-        const outsideRightOrBelowConstraint = And(x.gt(10), y.lt(25));
-
-        // Combine everything into a single condition
-        this.solver.add(And(baseConstraints, Or(outsideLeftOrAboveConstraint, outsideRightOrBelowConstraint)));
-
-        console.log(await this.solver.check());
-
-        const model = this.solver.model();
-        console.log("Item outside of fence and x >= 8 and y >= 20:", `${model.eval(x)}`, `${model.eval(y)}`);
     }
 
     async placeItemsInsideFencedAreas(num = 1, item) {
@@ -274,8 +199,7 @@ export default class Pathfinder extends Phaser.Scene {
         return true;
     }    
 
-    async placeMushroomAdjacentToTree(num = 1) {
-        const mushroom = 29;
+    async placeItemAdjacentToTree(num = 1, item) {
         let treeIndexes = this.getTreeIndexes();  // Get all tree tile coordinates
         const groundIndexes = [1, 2, 3];  // Define ground indexes
         let allValidCoords = [];  // List to store all valid positions for the mushroom
@@ -326,15 +250,14 @@ export default class Pathfinder extends Phaser.Scene {
         }
 
         // Place mushrooms at random positions within all valid positions
-        if (!this.placeItemsAtRandomPositions(allValidCoords, num, mushroom)) {
+        if (!this.placeItemsAtRandomPositions(allValidCoords, num, item)) {
             console.log("No valid positions found for mushroom placement adjacent to any tree.");
             return false;
         }
         return true;
     }
 
-    async placeSignsAdjacentToPath(num = 1) {
-        const sign = 83;
+    async placeItemAdjacentToPath(num = 1, item) {
         let pathIndexes = this.getPathIndexes();  // Get all path tile coordinates
         let allValidCoords = [];  // List to store all valid positions for the sign
     
@@ -383,15 +306,14 @@ export default class Pathfinder extends Phaser.Scene {
         }
 
         // Place signs at random positions within all valid positions
-        if (!this.placeItemsAtRandomPositions(allValidCoords, num, sign)) {
+        if (!this.placeItemsAtRandomPositions(allValidCoords, num, item)) {
             console.log("No valid positions found for sign placement adjacent to any path.");
             return false;
         }
         return true;
     }
 
-    async placeBeehiveAnywhere(num = 1) {
-        const beehive = 94;
+    async placeItemAnywhere(num = 1, item) {
         const groundIndexes = [1, 2, 3];  // Define ground indexes
         this.solver.reset();
         let [x, y] = [Int.const('x'), Int.const('y')];
@@ -429,7 +351,7 @@ export default class Pathfinder extends Phaser.Scene {
         }
 
         // Place beehives at random positions within all valid positions
-        if (!this.placeItemsAtRandomPositions(allValidCoords, num, beehive)) {
+        if (!this.placeItemsAtRandomPositions(allValidCoords, num, item)) {
             console.log("No valid positions found for beehive placement.");
             return false;
         }
