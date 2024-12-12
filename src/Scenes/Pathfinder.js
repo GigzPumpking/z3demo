@@ -19,10 +19,10 @@ export default class Pathfinder extends Phaser.Scene {
         this.TILEWIDTH = 40;
         this.TILEHEIGHT = 25;
 
-        this.numFenceItems = this.sceneData?.numFenceItems || 1;
-        this.numTreeItems = this.sceneData?.numTreeItems || 1;
-        this.numPathItems = this.sceneData?.numPathItems || 3;
-        this.numAnywhereItems = this.sceneData?.numAnywhereItems || 1;
+        this.numFenceItems = 1;
+        this.numTreeItems = 1;
+        this.numPathItems = 1;
+        this.numAnywhereItems = 1;
     }
 
     create() {
@@ -59,7 +59,29 @@ export default class Pathfinder extends Phaser.Scene {
         this.initializeMap();
 
         // Add a basic text display
-        this.chatText = this.add.text(16, 80, 'ChatGPT', { fontSize: '16px', fill: '#ffffff', backgroundColor: "#000000", wordWrap: { width: 700} });
+        // this.chatText = this.add.text(16, 80, 'ChatGPT', { fontSize: '16px', fill: '#ffffff', backgroundColor: "#000000", wordWrap: { width: 700} });
+
+        // Connect to HTML chatbox
+        const chatbox = document.getElementById("chatbox");
+        const chatInput = document.getElementById("chat-input");
+        const sendButton = document.getElementById("send-button");
+
+        // Handle send button click
+        sendButton.addEventListener("click", () => {
+            const input = chatInput.value.trim();
+            if (input) {
+                this.displayMessage(`You: ${input}`, "user");
+                this.handleChat(input);
+                chatInput.value = ""; // Clear the input
+            }
+        });
+
+        // Handle "Enter" key in the input field
+        chatInput.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+                sendButton.click();
+            }
+        });
 
         this.loadingText = this.add.text(16, 16, "Generating...", { fontSize: "32px", fill: "#FFFFFF", backgroundColor: "#000000", padding: 8 });
 
@@ -67,56 +89,27 @@ export default class Pathfinder extends Phaser.Scene {
 
         this.loadingText.setDepth(2);
 
-        /*
-            
-        // When R is pressed, reset the scene
-        this.input.keyboard.on("keydown-R", () => {
-            if (this.loadingText.alpha === 0) {
-                this.scene.restart();
-            } else {
-                console.log("Cannot restart while generating...");
-            }
+        // Connect to HTML buttons
+        const restartButton = document.getElementById("restart-button");
+        const generateButton = document.getElementById("generate-button");
+
+        // Add event listeners for the buttons
+        restartButton.addEventListener("click", () => {
+            this.scene.restart();
         });
 
-        */
+        generateButton.addEventListener("click", async () => {
+            await this.generateObjects();
+        });
 
         // Display user typing and listen for keyboard input
         this.input.keyboard.on('keydown', (event) => {
-            if (event.key === 'Enter') {
-                if (this.userInput.trim()) {
-                    const input = this.userInput.trim();
-                    this.userInput = ''; // Reset the input field
-                    this.chatText.text += `\nYou: ${input}`;
-                    this.handleChat(input); // Send input to OpenAI
-                }
-                return;
-            } 
-            // if shift key is pressed, do not append to user input
-            else if (event.key === 'Shift') {
-                return;
-            } 
-            // if the tilda key is pressed, generate the objects and return
-            else if (event.key === '`') {
+            if (event.key === '`') {
                 (async () => {
                     await this.generateObjects();
                 })();
                 return;
             }
-            // if the command key is pressed, ignore
-            else if (event.key === 'Meta') {
-                return;
-            }
-
-            // Allow backspace
-            if (event.key === 'Backspace') {
-                this.userInput = this.userInput.slice(0, -1);
-            } else {
-                // Append typed character
-                this.userInput += event.key;
-            }
-
-            // Display user input in real-time
-            this.updateTypingDisplay();
         });
 
         // Set a timer to update the loading text every second
@@ -126,6 +119,18 @@ export default class Pathfinder extends Phaser.Scene {
             callbackScope: this,
             loop: true
         });
+    }
+
+    displayMessage(message, role) {
+        const chatbox = document.getElementById("chatbox");
+        const messageDiv = document.createElement("div");
+
+        messageDiv.textContent = message;
+        messageDiv.style.margin = "5px 0";
+        messageDiv.style.color = role === "user" ? "#333" : "#007bff"; // User: Black, Bot: Blue
+
+        chatbox.appendChild(messageDiv);
+        chatbox.scrollTop = chatbox.scrollHeight; // Auto-scroll to the bottom
     }
 
     async generateObjects() {
@@ -146,7 +151,7 @@ export default class Pathfinder extends Phaser.Scene {
         await this.placeItemsInsideFencedAreas(this.numFenceItems, wheelbarrow);
         await this.placeItemAdjacentToTree(this.numTreeItems, mushroom);
         await this.placeItemAdjacentToPath(this.numPathItems, sign);
-        await this.placeItemAnywhere(this.numAnywhereItems, beehive, "up");
+        await this.placeItemAnywhere(this.numAnywhereItems, beehive);
         
         this.renderZ3Map();
     }
@@ -165,16 +170,7 @@ export default class Pathfinder extends Phaser.Scene {
     }
 
     async placeItemsInsideFencedAreas(num = 1, item, direction = null) {
-        /*
-        World Facts collection
-        */
-
         let fencedAreas = this.getFencedAreas();  // Get all fenced areas
-    
-        /*
-        z3 constraints
-        */
-
 
         let allValidCoords = [];  // List to store all valid positions for the item
 
@@ -202,10 +198,6 @@ export default class Pathfinder extends Phaser.Scene {
                 this.solver.add(Or(x.neq(xVal), y.neq(yVal)));
             }
         }
-
-        /*
-        item placement
-        */
 
         // Place items at random positions within all valid positions
         if (!this.placeItemsAtRandomPositions(allValidCoords, num, item, direction)) {
@@ -565,36 +557,6 @@ export default class Pathfinder extends Phaser.Scene {
         }
     }
 
-    update() {;
-        // Retrieve values from data or use defaults if not set
-
-        this.numFenceItems = this.data.get('numFenceItems') || 1;
-        this.numTreeItems = this.data.get('numTreeItems') || 1;
-        this.numPathItems = this.data.get('numPathItems') || 3;
-        this.numAnywhereItems = this.data.get('numAnywhereItems') || 1;
-
-        // Reset changedSettings flag
-        let changedSettings = this.data.get('changedSettings') || false;
-
-        // If settings have changed, restart the scene
-        if (changedSettings) {
-            this.data.set('changedSettings', false);
-            if (this.loadingText !== undefined) {
-                if (this.loadingText.alpha === 0) {
-                    this.scene.restart();
-                } else {
-                    console.log("Cannot restart while generating...");
-                }
-            }
-        }
-    }
-
-    updateTypingDisplay() {
-        const lines = this.chatText.text.split('\n');
-        lines[lines.length - 1] = `Typing: ${this.userInput}`;
-        this.chatText.text = lines.join('\n');
-    }
-
     async handleChat(input) {
         // Add user message to conversation history
         this.conversationHistory.push({ role: 'user', content: input });
@@ -635,82 +597,57 @@ export default class Pathfinder extends Phaser.Scene {
                     model: 'gpt-3.5-turbo',
                     messages: [
                         { role: 'system', content: systemPrompt },
-                        ...this.conversationHistory, // Include the conversation history
+                        ...this.conversationHistory,
                     ],
                 }),
             });
-    
+
             const data = await response.json();
-    
-            // Parse ChatGPT's response
             const botResponse = data.choices[0].message.content;
-            console.log('ChatGPT:', botResponse);
-            this.chatText.text += `\nChatBot: ${botResponse}`;
+
+            this.displayMessage(`ChatBot: ${botResponse}`, "bot");
             this.conversationHistory.push({ role: 'assistant', content: botResponse });
-    
-            let botFeedback;
-    
-            // Attempt to parse JSON from ChatGPT's response
+
             let parsedResponse;
             try {
                 parsedResponse = JSON.parse(botResponse);
             } catch (error) {
-                botFeedback = `\nChatBot: Sorry, I couldn't understand your request.`;
-                console.error('Error parsing ChatGPT response as JSON:', error);
-                this.chatText.text += botFeedback;
-                this.conversationHistory.push({ role: 'assistant', content: botFeedback });
+                this.displayMessage("ChatBot: Sorry, I couldn't understand your request.", "bot");
                 return;
             }
-    
-            // Extract function and parameters from parsed response
+
             const { function: functionName, parameters } = parsedResponse;
-    
             if (!functionName || !parameters) {
-                console.log('Invalid response format:', parsedResponse);
-                botFeedback = `\nChatBot: Sorry, I couldn't understand your request.`;
-                this.chatText.text += botFeedback;
-                this.conversationHistory.push({ role: 'assistant', content: botFeedback });
+                this.displayMessage("ChatBot: Invalid response format.", "bot");
                 return;
             }
-    
-            // Find the item index in the object list
+
             const item = this.objectList.find(obj => obj.name.toLowerCase() === parameters.item.toLowerCase());
             if (!item) {
-                console.log(`Item "${parameters.item}" not found in object list.`);
-                botFeedback = `\nChatBot: Item "${parameters.item}" not found in object list.`;
-                this.chatText.text += botFeedback;
-                this.conversationHistory.push({ role: 'assistant', content: botFeedback });
+                this.displayMessage(`ChatBot: Item "${parameters.item}" not found in object list.`, "bot");
                 return;
             }
-    
-            // Map function names to actual functions
+
             const functionMap = {
                 placeItemAdjacentToTree: this.placeItemAdjacentToTree.bind(this),
                 placeItemAdjacentToPath: this.placeItemAdjacentToPath.bind(this),
                 placeItemsInsideFencedAreas: this.placeItemsInsideFencedAreas.bind(this),
                 placeItemAnywhere: this.placeItemAnywhere.bind(this),
             };
-    
+
             const targetFunction = functionMap[functionName];
             if (!targetFunction) {
-                console.log(`Function "${functionName}" not found.`);
-                this.chatText.text += `\nChatBot: I couldn't understand what action to perform.`;
+                this.displayMessage("ChatBot: Invalid function name.", "bot");
                 return;
             }
-    
-            // Call the target function with the parsed parameters
+
             const { num, direction } = parameters;
             await targetFunction(num, item.index, direction);
-    
-            botFeedback = `\nChatBot: Successfully executed "${functionName}" for ${num} ${item.name}(s).`;
-            // Push the response to the conversation history
-            this.conversationHistory.push({ role: 'assistant', content: botFeedback });
-            this.chatText.text += botFeedback;
+
+            this.displayMessage(`ChatBot: Successfully executed "${functionName}" for ${num} ${item.name}(s).`, "bot");
         } catch (error) {
-            console.log("input", input);
             console.error('Error communicating with ChatGPT:', error);
-            const botFeedback = `\nChatBot: There was an error processing your request.`;
-            this.chatText.text += botFeedback;
+            this.displayMessage("ChatBot: There was an error processing your request.", "bot");
         }
     }    
     

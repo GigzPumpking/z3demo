@@ -1,56 +1,139 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Phaser Game with User Controls</title>
-    <script src="/z3-built.js"></script>
-    <script>
-      globalThis.global = { initZ3: globalThis.initZ3 };
-    </script>
-    <style>
-      /* Control panel styles */
-      #controls {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        background-color: rgba(255, 255, 255, 0.8);
-        padding: 10px;
-        border-radius: 5px;
-        font-family: Arial, sans-serif;
-      }
-      #controls label {
-        display: inline-block;
-        width: 120px;
-        margin-top: 5px;
-      }
-      #controls input {
-        width: 50px;
-      }
-    </style>
-  </head>
-  <body>
-    <div id="app"></div>
-    <div id="phaser-game"></div>
-    
-    <!-- Control Panel for Item Counts -->
-    <div id="controls">
-      <label for="numWheelbarrows">Wheelbarrows:</label>
-      <input type="number" id="numWheelbarrows" value="1" min="0"><br>
-      
-      <label for="numMushrooms">Mushrooms:</label>
-      <input type="number" id="numMushrooms" value="1" min="0"><br>
-      
-      <label for="numSigns">Signs:</label>
-      <input type="number" id="numSigns" value="1" min="0"><br>
-      
-      <label for="numBeehives">Beehives:</label>
-      <input type="number" id="numBeehives" value="1" min="0"><br>
-      
-      <button id="applySettings">Apply Settings</button>
-    </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Phaser Game with Chat</title>
+  <script src="/z3-built.js"></script>
+  <script>
+    globalThis.global = { initZ3: globalThis.initZ3 };
+  </script>
+  <style>
+    /* General Styles */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      background-color: #f4f4f9;
+    }
 
-    <span id="description"></span>
-    <script type="module" src="./src/main.js"></script>
-  </body>
+    /* Phaser Game Container */
+    #phaser-game {
+      width: 1280px;
+      height: 800px;
+      background: #000;
+      border: 2px solid #ccc;
+      border-radius: 10px;
+      margin: 20px auto;
+    }
+
+    /* Button Container */
+    #button-container {
+      width: 800px;
+      margin-top: 20px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* Restart Button Styles */
+    #restart-button, #generate-button {
+      padding: 10px 20px;
+      background: #28a745;
+      border: none;
+      color: white;
+      cursor: pointer;
+      font-size: 16px;
+      border-radius: 5px;
+      flex: 1;
+      margin: 0 10px;
+      text-align: center;
+    }
+
+    #restart-button:hover, #generate-button:hover {
+      background: #218838;
+    }
+
+    #generate-button {
+      background: #007bff;
+    }
+
+    #generate-button:hover {
+      background: #0056b3;
+    }
+
+    /* Chatbox Styles */
+    #chatbox-container {
+      width: 800px;
+      margin-top: 20px;
+    }
+
+    #chatbox {
+      width: 100%;
+      height: 200px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      padding: 10px;
+      background: #fff;
+      border-radius: 5px;
+      font-size: 14px;
+      font-family: Arial, sans-serif;
+    }
+
+    #chat-input-container {
+      display: flex;
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    #chat-input {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px 0 0 5px;
+      font-size: 14px;
+    }
+
+    #send-button {
+      padding: 10px 20px;
+      background: #007bff;
+      border: none;
+      color: white;
+      cursor: pointer;
+      border-radius: 0 5px 5px 0;
+    }
+
+    #send-button:hover {
+      background: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <!-- App Root -->
+  <div id="app"></div>
+  
+  <!-- Phaser Game Container -->
+  <div id="phaser-game"></div>
+  
+  <!-- Buttons for Restart and Generate -->
+  <div id="button-container">
+    <button id="restart-button">Restart Scene</button>
+    <button id="generate-button">Generate Objects</button>
+  </div>
+  
+  <!-- Chatbox Container -->
+  <div id="chatbox-container">
+    <div id="chatbox"></div>
+    <div id="chat-input-container">
+      <input id="chat-input" type="text" placeholder="Type your message here..." />
+      <button id="send-button">Send</button>
+    </div>
+  </div>
+  
+  <!-- Main Game Script -->
+  <script type="module" src="./src/main.js"></script>
+</body>
 </html>
