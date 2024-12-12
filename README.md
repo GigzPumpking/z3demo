@@ -1,5 +1,7 @@
 # z3-web-browser
 
-Press R to restart, adjust num items generated in top right corner.
+Click the Restart button to restart the scene
 
-Scene restarting only occurs when not generating.
+Click the Generate button to generate the objects that you've told the bot to set up
+
+Enter information in the chatbox to generate a set number of items in various locations
