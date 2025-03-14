@@ -1,4 +1,4 @@
-# Z3Demo - ChatGPT-Powered 2D Map Generator
+# Z3Demo - ChatGPT-Powered 2D Map Item Placing
 
 ## Overview
 This repo is a tool that integrates ChatGPT with a text-based input system to assist in generating items on a 2D map. By using OpenAI's ChatGPT and the Z3 SMT Solver, this project enables users to dynamically place objects on a 2D map using Natural Language.
